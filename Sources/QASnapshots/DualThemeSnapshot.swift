@@ -1,7 +1,7 @@
 import SwiftUI
 
-@MainActor
 public protocol SnapshotThemeApplying {
+    @MainActor
     static func prepare(
         _ sut: some View,
         colorScheme: ColorScheme,

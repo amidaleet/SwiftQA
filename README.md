@@ -11,7 +11,11 @@ Swift snapshot testing for UIKit and SwiftUI. Compare a rendered view to a PNG r
 
 UI snapshot tests need an iOS Simulator host. Macro expansion tests run on macOS with `swift test`.
 
+You need to have `.xcodeproj` to host your snapshot test targets. Test target should set the host app in TEST_HOST setting in order to run UIKit/SwiftUI. Swift Package targets do not support TEST_HOST.
+
 ## Installation
+
+Add this package as depenency to project.
 
 ```swift
 dependencies: [
@@ -19,16 +23,9 @@ dependencies: [
 ],
 ```
 
-```swift
-.testTarget(
-    name: "MyUITests",
-    dependencies: [
-        .product(name: "QASnapshots", package: "QA"),
-    ]
-)
-```
+Add `QASnapshots` to the test target only (it links XCTest).
 
-Add `QASnapshotsAssets` to the host app or the test target so SwiftPM copies the resource bundle. Keep `QASnapshots` on the test target only — it links XCTest.
+Add `QASnapshotsAssets` to the host app or the test target so SwiftPM copies the resource bundle. 
 
 ## Usage
 

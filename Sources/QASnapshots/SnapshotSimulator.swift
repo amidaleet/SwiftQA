@@ -17,22 +17,23 @@ extension Snapshots {
         os: OperatingSystemVersion,
         hint: String? = nil
     ) {
-        SimulatorRequirementStorage.lock.lock()
-        SimulatorRequirementStorage.value = SimulatorRequirement(model: model, os: os, hint: hint)
-        SimulatorRequirementStorage.lock.unlock()
+        ResolvedSimulatorRequirement.lock.lock()
+        let requirement = SimulatorRequirement(model: model, os: os, hint: hint)
+        ResolvedSimulatorRequirement.processSharedValue = .required(requirement)
+        ResolvedSimulatorRequirement.lock.unlock()
     }
 
     /// Clears a requirement set via `requireSimulator`. The environment variable still applies.
     public static func resetSimulatorRequirement() {
-        SimulatorRequirementStorage.lock.lock()
-        SimulatorRequirementStorage.value = nil
-        SimulatorRequirementStorage.lock.unlock()
+        ResolvedSimulatorRequirement.lock.lock()
+        ResolvedSimulatorRequirement.processSharedValue = nil
+        ResolvedSimulatorRequirement.lock.unlock()
     }
 
     @discardableResult
     static func assertSimulatorIfNeeded(file: StaticString, line: UInt) -> Bool {
         switch resolvedSimulatorRequirement() {
-        case .none:
+        case .any:
             return true
         case let .invalidEnvironment(raw):
             XCTFail(
@@ -66,39 +67,48 @@ extension Snapshots {
     }
 
     private static func resolvedSimulatorRequirement() -> ResolvedSimulatorRequirement {
-        SimulatorRequirementStorage.lock.lock()
-        let configured = SimulatorRequirementStorage.value
-        SimulatorRequirementStorage.lock.unlock()
-        if let configured {
-            return .required(configured)
+        ResolvedSimulatorRequirement.lock.lock()
+        defer {
+            ResolvedSimulatorRequirement.lock.unlock()
+        }
+        let resolved = ResolvedSimulatorRequirement.processSharedValue
+        if let resolved {
+            return resolved
         }
 
+        let newValue: ResolvedSimulatorRequirement
         let env = ProcessInfo.processInfo.environment
+
         guard let raw = env["QA_SNAPSHOTS_SIMULATOR"], !raw.isEmpty else {
-            return .none
+            newValue = .any
+            ResolvedSimulatorRequirement.processSharedValue = newValue
+            return newValue
         }
         guard let parsed = parseSimulatorEnvironment(raw) else {
-            return .invalidEnvironment(raw)
+            newValue = .invalidEnvironment(raw)
+            ResolvedSimulatorRequirement.processSharedValue = newValue
+            return newValue
         }
-        return .required(
+
+        newValue = .required(
             SimulatorRequirement(
                 model: parsed.model,
                 os: parsed.os,
                 hint: env["QA_SNAPSHOTS_SIMULATOR_HINT"]
             )
         )
+        ResolvedSimulatorRequirement.processSharedValue = newValue
+        return newValue
     }
 }
 
 private enum ResolvedSimulatorRequirement {
-    case none
+    case any
     case invalidEnvironment(String)
     case required(SimulatorRequirement)
-}
 
-private enum SimulatorRequirementStorage {
     static let lock = NSLock()
-    nonisolated(unsafe) static var value: SimulatorRequirement?
+    nonisolated(unsafe) static var processSharedValue: ResolvedSimulatorRequirement?
 }
 
 private struct SimulatorRequirement: Sendable {
