@@ -8,9 +8,10 @@ let package = Package(
     defaultLocalization: "en",
     platforms: [
         .iOS(.v15),
-        .macOS(.v14),
+        .macOS(.v15),
     ],
     products: [
+        .library(name: "PrettyDump", targets: ["PrettyDump"]),
         .library(name: "QASnapshots", targets: ["QASnapshots"]),
         .library(name: "QASnapshotsAssets", targets: ["QASnapshotsAssets"]),
     ],
@@ -18,6 +19,11 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-syntax", "600.0.1" ..< "605.0.0"),
     ],
     targets: [
+        .target(name: "PrettyDump"),
+        .testTarget(
+            name: "PrettyDumpTests",
+            dependencies: ["PrettyDump"]
+        ),
         .macro(
             name: "QASnapshotsMacros",
             dependencies: [
@@ -29,7 +35,7 @@ let package = Package(
         ),
         .target(
             name: "QASnapshots",
-            dependencies: ["QASnapshotsMacros"],
+            dependencies: ["QASnapshotsMacros", "PrettyDump"],
             linkerSettings: [
                 .linkedFramework("XCTest"),
             ]

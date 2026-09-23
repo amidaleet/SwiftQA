@@ -2,6 +2,8 @@
 
 Swift snapshot testing for UIKit and SwiftUI. Compare a rendered view to a PNG reference on a set of device sizes, with optional accessibility overlays and light/dark dual frames.
 
+`PrettyDump` formats arbitrary values and errors for logs, assertions, and JSON.
+
 ## Requirements
 
 - iOS 15+
@@ -23,7 +25,9 @@ dependencies: [
 ],
 ```
 
-Add `QASnapshots` to the test target only (it links XCTest).
+Add `PrettyDump` to every target that calls `Pretty` or conforms to `PrettyError` / `PrettyConvertible`.
+
+Add `QASnapshots` to the test target only (it links XCTest and depends on `PrettyDump`).
 
 Add `QASnapshotsAssets` to the host app or the test target so SwiftPM copies the resource bundle. 
 
@@ -135,11 +139,28 @@ QA_SNAPSHOTS_SIMULATOR_HINT=Optional extra text in the failure message
 
 Format is `SIMULATOR_MODEL_IDENTIFIER@major.minor.patch`. Record mode checks before capture and skips on mismatch. Verify mode checks only after a failed comparison.
 
+## PrettyDump
+
+```swift
+import PrettyDump
+
+Pretty.string(model)
+Pretty.json(model)
+
+struct Timeout: PrettyError {}
+```
+
+`Pretty.convert` mirrors the value into a `PrettyElement`. Conform to `PrettyConvertible` when that mirror is too noisy. `PrettyUnconvertible` prints the type name. `PrettyRawConvertible` prints the raw value. `PrettyError` builds a stable domain, name, and code for `NSError`. `JSON` is `typealias JSON = Any`.
+
+`PrettyDump` does not link XCTest. Link the product from each target that imports it. A static library does not absorb the package, so the final app or test bundle needs the product on its own link line.
+
 ## Package layout
 
 | Product / target | Role |
 | --- | --- |
-| `QASnapshots` | Runtime: capture, compare (CPU / Metal), macros. Links `XCTest`. |
+| `PrettyDump` | Value and error formatting: `Pretty`, `PrettyElement`, `PrettyConvertible`, `PrettyError`. |
+| `PrettyDumpTests` | Unit tests for `PrettyDump`. SPM test target (`swift test`). |
+| `QASnapshots` | Runtime: capture, compare (CPU / Metal), macros. Links `XCTest`. Depends on `PrettyDump`. |
 | `QASnapshotsAssets` | Resource bundle (Metal, localization, Crosshairs). Depend on it from the host app or test target. |
 | `QASnapshotsMacros` | Compiler plugin (`@SnapshotSuite`, `@SnapshotTest`, `@UnitTest`, `@DualThemeSnapshotSuite`) |
 | `QASnapshotsMacrosTests` | Macro expansion tests |

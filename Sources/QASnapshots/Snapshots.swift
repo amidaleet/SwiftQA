@@ -1,3 +1,4 @@
+internal import PrettyDump
 import SwiftUI
 import UIKit
 import XCTest
@@ -235,12 +236,5 @@ extension SnapshotMode {
         case .verify:
             try prepareSut(device)
         }
-    }
-}
-
-enum Pretty {
-    static func string(_ value: Any?) -> String {
-        guard let value else { return "null" }
-        return String(describing: value)
     }
 }
