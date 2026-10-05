@@ -11,18 +11,32 @@ let package = Package(
         .macOS(.v15),
     ],
     products: [
-        .library(name: "PrettyDump", targets: ["PrettyDump"]),
-        .library(name: "QASnapshots", targets: ["QASnapshots"]),
-        .library(name: "QASnapshotsAssets", targets: ["QASnapshotsAssets"]),
+        .library(name: "PrettyDump", type: .static, targets: ["PrettyDump"]),
+        .library(name: "CustomDump", type: .static, targets: ["CustomDump"]),
+        .library(name: "QAMust", type: .static, targets: ["QAMust"]),
+        .library(name: "QASnapshots", type: .static, targets: ["QASnapshots"]),
+        .library(name: "QASnapshotsAssets", type: .static, targets: ["QASnapshotsAssets"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-syntax", "600.0.1" ..< "605.0.0"),
     ],
     targets: [
         .target(name: "PrettyDump"),
+        .target(name: "CustomDump"),
+        .target(
+            name: "QAMust",
+            dependencies: ["CustomDump", "PrettyDump"],
+            linkerSettings: [
+                .linkedFramework("XCTest"),
+            ]
+        ),
+        .testTarget(
+            name: "QAMustTests",
+            dependencies: ["QAMust"]
+        ),
         .testTarget(
             name: "PrettyDumpTests",
-            dependencies: ["PrettyDump"]
+            dependencies: ["PrettyDump", "QAMust"]
         ),
         .macro(
             name: "QASnapshotsMacros",

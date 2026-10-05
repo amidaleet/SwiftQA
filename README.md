@@ -1,19 +1,31 @@
 # QA
 
-Swift snapshot testing for UIKit and SwiftUI. Compare a rendered view to a PNG reference on a set of device sizes, with optional accessibility overlays and light/dark dual frames.
+Utilities for writing tests: formatting, equality, assertions, and UI snapshots.
 
-`PrettyDump` formats arbitrary values and errors for logs, assertions, and JSON.
+- `PrettyDump` formats arbitrary values and errors for logs, assertions, and JSON.
+- `CustomDump` mirrors values for logs and diffs.
+- `QAMust` is the XCTest layer on top of them + test helpers (like equality by walking mirrors).
+- `QASnapshots` compares rendered views to PNG references.
 
 ## Requirements
 
 - iOS 15+
 - Swift 6
 - Xcode 16+ (SwiftSyntax 600)
-- XCTest (linked by `QASnapshots`; use that product from a unit-test target with a host app)
+- XCTest, linked by:
+  - `QASnapshots`
+  - `QAMust`
 
-UI snapshot tests need an iOS Simulator host. Macro expansion tests run on macOS with `swift test`.
+  Use those products from a unit-test target.
+  UI snapshots also need a host app.
 
-You need to have `.xcodeproj` to host your snapshot test targets. Test target should set the host app in TEST_HOST setting in order to run UIKit/SwiftUI. Swift Package targets do not support TEST_HOST.
+UI snapshot tests need an iOS Simulator host.
+Macro expansion tests run on macOS with `swift test`.
+
+Snapshot test targets need an `.xcodeproj`:
+
+- Set the host app in `TEST_HOST` to run UIKit or SwiftUI.
+- Swift Package targets do not support `TEST_HOST`.
 
 ## Installation
 
@@ -25,17 +37,31 @@ dependencies: [
 ],
 ```
 
-Add `PrettyDump` to every target that calls `Pretty` or conforms to `PrettyError` / `PrettyConvertible`.
+- `PrettyDump` — every target that calls `Pretty` or conforms to `PrettyError` / `PrettyConvertible`.
+- `CustomDump` — any target that needs a mirror diff or `customDump`.
+  - Does not link XCTest.
+- `QAMust` — test target only.
+  - Links XCTest.
+  - Depends on `CustomDump` and `PrettyDump`.
+- `QASnapshots` — test target only.
+  - Links XCTest.
+  - Depends on `PrettyDump`.
+- `QASnapshotsAssets` — host app or the test target, so SwiftPM copies the resource bundle.
 
-Add `QASnapshots` to the test target only (it links XCTest and depends on `PrettyDump`).
+## QASnapshots
 
-Add `QASnapshotsAssets` to the host app or the test target so SwiftPM copies the resource bundle. 
-
-## Usage
+Swift snapshot testing for UIKit and SwiftUI.
+Compare a rendered view to a PNG reference on a set of device sizes, with optional accessibility overlays and light/dark dual frames.
 
 ### `@SnapshotSuite`
 
-Functions named `test*` that return `some View`, `UIView`, `UIViewController`, `SnapshotSut`, or `SnapshotSutHolder` become XCTest methods:
+Functions named `test*` become XCTest methods when they return:
+
+- `some View`
+- `UIView`
+- `UIViewController`
+- `SnapshotSut`
+- `SnapshotSutHolder`
 
 ```swift
 import QASnapshots
@@ -60,7 +86,8 @@ struct MyViewTests {
 }
 ```
 
-Override suite defaults on one test with `@SnapshotTest`. Mark a `test*` function that is not a snapshot as `@UnitTest`.
+- `@SnapshotTest` overrides suite defaults on one test.
+- `@UnitTest` marks a `test*` function that is not a snapshot.
 
 ### Imperative API
 
@@ -78,7 +105,8 @@ await Snapshots.matchErrors(
 
 ### Dual theme
 
-`@DualThemeSnapshotSuite` captures light and dark in one double-width frame. Implement `SnapshotThemeApplying` and pass the type:
+`@DualThemeSnapshotSuite` captures light and dark in one double-width frame.
+Implement `SnapshotThemeApplying` and pass the type:
 
 ```swift
 @DualThemeSnapshotSuite(theme: AppSnapshotTheme.self, deviceGroup: .phone)
@@ -110,13 +138,19 @@ MyViewTests.swift
 _Snapshots_/Default_375x667@2x.png
 ```
 
-Names are `{testName}_{width}x{height}@{scale}x.png`. A `_Accessibility` suffix is added when `includeAccessibility: true`.
+- Name: `{testName}_{width}x{height}@{scale}x.png`
+- `includeAccessibility: true` adds a `_Accessibility` suffix.
 
-On mismatch the matcher writes `*_diff.png`, `*_new.png`, and `*_merge.png` beside the reference and attaches the merge image to the XCTest activity.
+On mismatch the matcher writes these beside the reference and attaches the merge image to the XCTest activity:
+
+- `*_diff.png`
+- `*_new.png`
+- `*_merge.png`
 
 ## Simulator requirement
 
-By default any simulator is allowed. Pin a model and OS if references must not drift.
+By default any simulator is allowed.
+Pin a model and OS if references must not drift.
 
 **Code** (wins over the environment variable):
 
@@ -128,7 +162,10 @@ Snapshots.requireSimulator(
 )
 ```
 
-Call this once from the test bundle (for example in `setUp` of a base class, or a module initializer).
+Call this once from the test bundle, for example:
+
+- `setUp` of a base class
+- a module initializer
 
 **Environment**
 
@@ -137,7 +174,10 @@ QA_SNAPSHOTS_SIMULATOR=iPhone17,3@26.5.0
 QA_SNAPSHOTS_SIMULATOR_HINT=Optional extra text in the failure message
 ```
 
-Format is `SIMULATOR_MODEL_IDENTIFIER@major.minor.patch`. Record mode checks before capture and skips on mismatch. Verify mode checks only after a failed comparison.
+Format is `SIMULATOR_MODEL_IDENTIFIER@major.minor.patch`.
+
+- Record mode checks before capture and skips on mismatch.
+- Verify mode checks only after a failed comparison.
 
 ## PrettyDump
 
@@ -150,9 +190,94 @@ Pretty.json(model)
 struct Timeout: PrettyError {}
 ```
 
-`Pretty.convert` mirrors the value into a `PrettyElement`. Conform to `PrettyConvertible` when that mirror is too noisy. `PrettyUnconvertible` prints the type name. `PrettyRawConvertible` prints the raw value. `PrettyError` builds a stable domain, name, and code for `NSError`. `JSON` is `typealias JSON = Any`.
+`Pretty.convert` mirrors the value into a `PrettyElement`.
+Conform to `PrettyConvertible` when that mirror is too noisy.
 
-`PrettyDump` does not link XCTest. Link the product from each target that imports it. A static library does not absorb the package, so the final app or test bundle needs the product on its own link line.
+- `PrettyUnconvertible` prints the type name.
+- `PrettyRawConvertible` prints the raw value.
+- `PrettyError` builds a stable domain, name, and code for `NSError`.
+- `JSON` is `typealias JSON = Any`.
+
+`PrettyDump` and `CustomDump` do not link XCTest.
+All library products are static.
+
+In an Xcode project, link them only from the final image:
+
+- app
+- extension
+- test bundle
+
+A static framework that links a product copies its object file into the archive.
+Another copy in the same image duplicates symbols.
+Package targets have no autolink entries, so a static framework that only imports the product still needs the final image to link it.
+
+## CustomDump
+
+Mirror-based dump and diff.
+Safe for production targets.
+
+```swift
+import CustomDump
+
+String(customDumping: model)
+diff(previous, current) // nil when the mirrors match
+```
+
+`diff` returns a line diff, or `nil` when the values match.
+
+- `DiffFormat.default` uses `-`, `+`, and space.
+- `DiffFormat.proportional` uses characters that line up in Xcode's failure font.
+
+Conform to one of these when the default mirror is too noisy:
+
+- `CustomDumpReflectable`
+- `CustomDumpStringConvertible`
+- `CustomDumpRepresentable`
+
+## QAMust
+
+XCTest assertions.
+Test targets only.
+
+```swift
+import QAMust
+
+Must.equal(received, expected)
+Must.beTrue(flag)
+Must.beFalse(flag)
+Must.beNil(value)
+Must.beNotNil(value)
+Must.throwError({ try decode() }, DecodeError.invalid)
+```
+
+Names drop the `assert` prefix.
+
+`Must.equal` prints a `CustomDump` diff (`DiffFormat.proportional`) when the values differ.
+
+- `Must.equal` requires `Equatable` and uses `==`.
+- `Must.mirrorEqual` uses `areMirrorEqual`, including when the type is `Equatable`.
+- `Must.containAll` and `Must.containAllMirrorEqual` are the same split.
+
+`QAMustTests` covers these assertions.
+
+### MirrorEqual
+
+```swift
+import QAMust
+
+struct LoginState: MirrorEquatable {
+    var email = ""
+    var token = ""
+}
+
+areMirrorEqual(received, expected)
+```
+
+`MirrorEquatable` synthesizes `==` by walking the mirror, so stored properties do not have to be `Equatable`.
+
+- Dictionaries match by key.
+- Sets ignore order.
+- Conform to `AlwaysEqualToSameMetatypeInMirror` when a field should count as equal for any two values of that same type, instead of walking its children.
 
 ## Package layout
 
@@ -160,9 +285,13 @@ struct Timeout: PrettyError {}
 | --- | --- |
 | `PrettyDump` | Value and error formatting: `Pretty`, `PrettyElement`, `PrettyConvertible`, `PrettyError`. |
 | `PrettyDumpTests` | Unit tests for `PrettyDump`. SPM test target (`swift test`). |
+| `CustomDump` | Mirror dump and diff: `customDump`, `diff`. No XCTest. |
+| `QAMust` | XCTest assertions: `Must`, `MirrorEquatable`, `areMirrorEqual`. Depends on `CustomDump` and `PrettyDump`. |
+| `QAMustTests` | Unit tests for `Must`, `areMirrorEqual`. SPM test target (`swift test`). |
 | `QASnapshots` | Runtime: capture, compare (CPU / Metal), macros. Links `XCTest`. Depends on `PrettyDump`. |
 | `QASnapshotsAssets` | Resource bundle (Metal, localization, Crosshairs). Depend on it from the host app or test target. |
 | `QASnapshotsMacros` | Compiler plugin (`@SnapshotSuite`, `@SnapshotTest`, `@UnitTest`, `@DualThemeSnapshotSuite`) |
 | `QASnapshotsMacrosTests` | Macro expansion tests |
 
-`QASnapshotsTests` (UI snapshots) is not an SPM test target: it needs a host app, so an Xcode project is required to run it.
+`QASnapshotsTests` (UI snapshots) is not an SPM test target.
+It needs a host app, so an Xcode project is required to run it.

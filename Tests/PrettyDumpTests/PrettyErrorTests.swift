@@ -1,78 +1,71 @@
 import PrettyDump
-import Testing
+import QAMust
+import XCTest
 
-@Suite
-struct PrettyErrorTests {
-    private struct PlainError: PrettyError {}
-    private struct ABCError: PrettyError {}
-
-    private enum EnumError: PrettyError, Identifiable {
-        enum ID: String, CaseIterable {
-            case simple
-            case string
-        }
-
-        var id: ID {
-            switch self {
-            case .simple: .simple
-            case .string: .string
-            }
-        }
-
-        case simple
-        case string(String = "some")
-    }
-
-    private enum Container {
-        struct NestedError: PrettyError {}
-    }
-
-    @Test
-    func testGeneratedErrorDomain() {
+final class PrettyErrorTests: XCTestCase {
+    func test_PlainError_errorDomain() {
         let error = PlainError()
 
-        #expect(error.errorDomain == "plain-error")
+        Must.equal(error.errorDomain, "plain-error")
     }
 
-    @Test
-    func testGeneratedPlainErrorName() {
+    func test_PlainError_errorName() {
         let error = PlainError()
 
-        #expect(error.errorName == "plain-error")
+        Must.equal(error.errorName, "plain-error")
     }
 
-    @Test
-    func testGeneratedPlainErrorCode() {
+    func test_PlainError_errorCode() {
         let error = PlainError()
 
-        #expect(error.errorCode == .noPrettyErrorCode)
+        Must.equal(error.errorCode, .noPrettyErrorCode)
     }
 
-    @Test
-    func testGeneratedUpperSeriesErrorDomain() {
+    func test_ABCError_errorDomain() {
         let error = ABCError()
 
-        #expect(error.errorDomain == "abc-error")
+        Must.equal(error.errorDomain, "abc-error")
     }
 
-    @Test
-    func testGeneratedEnumErrorName() {
+    func test_EnumError_errorName() {
         let error = EnumError.string()
 
-        #expect(error.errorName == "string")
+        Must.equal(error.errorName, "string")
     }
 
-    @Test
-    func testGeneratedEnumErrorCode() {
+    func test_EnumError_errorCode() {
         let error = EnumError.string()
 
-        #expect(error.errorCode == EnumError.ID.allCases.firstIndex(of: .string))
+        Must.equal(error.errorCode, EnumError.ID.allCases.firstIndex(of: .string))
     }
 
-    @Test
-    func testGeneratedNestedErrorDomain() {
+    func test_NestedError_errorDomain() {
         let error = Container.NestedError()
 
-        #expect(error.errorDomain == "nested-error")
+        Must.equal(error.errorDomain, "nested-error")
     }
+}
+
+private struct PlainError: PrettyError {}
+private struct ABCError: PrettyError {}
+
+private enum EnumError: PrettyError, Identifiable {
+    enum ID: String, CaseIterable {
+        case simple
+        case string
+    }
+
+    var id: ID {
+        switch self {
+        case .simple: .simple
+        case .string: .string
+        }
+    }
+
+    case simple
+    case string(String = "some")
+}
+
+private enum Container {
+    struct NestedError: PrettyError {}
 }

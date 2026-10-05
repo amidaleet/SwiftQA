@@ -1,34 +1,29 @@
 @testable import PrettyDump
-import Testing
+import QAMust
+import XCTest
 
-@Suite
-struct PrettyTests {
-    @Test
+final class PrettyTests: XCTestCase {
     func test_PrettyCollection() {
-        #expect(Pretty.convert(Env.collection) == Env.prettyCollection)
+        Must.equal(Pretty.convert(Env.collection), Env.prettyCollection)
     }
 
-    @Test
     func test_PrettyDictionary() {
-        #expect(Pretty.convert(Env.dictionary) == Env.prettyDictionary)
+        Must.equal(Pretty.convert(Env.dictionary), Env.prettyDictionary)
     }
 
-    @Test
     func test_Tuple() {
-        #expect(Pretty.convert(Env.tuple) == .dictionary([
+        Must.equal(Pretty.convert(Env.tuple), .dictionary([
             .string(".0"): .string(Env.tuple.0),
             .string(".1"): .string(Env.tuple.1),
         ]))
     }
 
-    @Test
     func test_SimpleEnum() {
-        #expect(Pretty.convert(Enumeration.dog) == .string("dog"))
+        Must.equal(Pretty.convert(Enumeration.dog), .string("dog"))
     }
 
-    @Test
     func test_AssociatedEnum() {
-        #expect(Pretty.convert(Enumeration.cat(Env.barsik.rawValue, age: 5)) == .dictionary([
+        Must.equal(Pretty.convert(Enumeration.cat(Env.barsik.rawValue, age: 5)), .dictionary([
             .string("cat"): .dictionary([
                 .string("age"): .int(5),
                 .string(".0"): .string("barsik"),
@@ -36,26 +31,22 @@ struct PrettyTests {
         ]))
     }
 
-    @Test
     func test_PrettyEnum() {
-        #expect(Pretty.convert(Enumeration.parrot(Env.oscar)) == .dictionary([
+        Must.equal(Pretty.convert(Enumeration.parrot(Env.oscar)), .dictionary([
             .string("parrot"): .string("oscar"),
         ]))
     }
 
-    @Test
     func test_Complex() {
-        #expect(Pretty.convert(Env.complex) == Env.prettyComplex)
+        Must.equal(Pretty.convert(Env.complex), Env.prettyComplex)
     }
 
-    @Test
     func test_Print_String() {
-        #expect(Pretty.string(Env.lamp) == Env.lamp)
+        Must.equal(Pretty.string(Env.lamp), Env.lamp)
     }
 
-    @Test
     func test_Print_Number() {
-        #expect(Pretty.string(Env.number) == String(describing: Env.number))
+        Must.equal(Pretty.string(Env.number), String(describing: Env.number))
     }
 }
 
