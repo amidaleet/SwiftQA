@@ -46,7 +46,7 @@ final class MustValueTests: XCTestCase {
     }
 
     func test_equal_Async() async {
-        await Must.equal(1, 1)
+        await Must.equalAsync(1, 1)
     }
 
     func test_equal_FloatingPointAccuracy() {

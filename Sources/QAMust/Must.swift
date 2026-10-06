@@ -110,7 +110,7 @@ public enum Must {
                 line: line
             )
         } catch let error as E {
-            await Must.equal(error, expectedError, file: file, line: line)
+            Must.equal(error, expectedError, file: file, line: line)
         } catch {
             XCTFail(
                 """
@@ -369,7 +369,7 @@ public enum Must {
         )
     }
 
-    public static func equal<T: Equatable>(
+    public static func equalAsync<T: Equatable>(
         _ received: @autoclosure () async throws -> T,
         _ expected: @autoclosure () async throws -> T,
         _ message: @autoclosure () -> String = "",
