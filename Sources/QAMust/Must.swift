@@ -50,7 +50,7 @@ public enum Must {
     }
 
     public static func throwAnyError<T>(
-        _ expression: () throws -> T,
+        _ expression: () throws -> T, // must NOT be @autoclosure
         _ message: String = "",
         file: StaticString = #filePath,
         line: UInt = #line
@@ -63,9 +63,28 @@ public enum Must {
         )
     }
 
+    public static func throwAnyError<T>(
+        _ expression: () async throws -> T, // must NOT be @autoclosure
+        _ message: String = "",
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) async {
+        do {
+            _ = try await expression()
+
+            XCTFail(
+                "No error was thrown as expected. \(message)",
+                file: file,
+                line: line
+            )
+        } catch {
+            return
+        }
+    }
+
     /// Хелпер для тестов, который декодирует и сравнивает ожидаемую и полученную ошибки
     public static func throwError<T, E: Error & Equatable>(
-        _ expression: () throws -> T, // must NOT be @autoclosure, see: CODESTYLE_GUIDE.md
+        _ expression: () throws -> T, // must NOT be @autoclosure
         _ expectedError: E,
         _ message: String = "",
         file: StaticString = #filePath,
@@ -95,7 +114,7 @@ public enum Must {
 
     /// Хелпер для тестов, который декодирует и сравнивает ожидаемую и полученную ошибки
     public static func throwError<T, E: Error & Equatable>(
-        _ expression: () async throws -> T, // must NOT be @autoclosure, see: CODESTYLE_GUIDE.md
+        _ expression: () async throws -> T, // must NOT be @autoclosure
         _ expectedError: E,
         _: String = "",
         file: StaticString = #filePath,
@@ -125,7 +144,7 @@ public enum Must {
     }
 
     public static func noThrow<T>(
-        _ expression: () async throws -> T, // must NOT be @autoclosure, see: CODESTYLE_GUIDE.md
+        _ expression: () async throws -> T, // must NOT be @autoclosure
         message: String? = nil,
         file: StaticString = #filePath,
         line: UInt = #line
@@ -148,7 +167,7 @@ public enum Must {
     /// Следует __всегда__ использовать в тестах для отлова `Swift.Error`
     /// вместо `XCTAssertNoThrow()`, срабатывающего только на `NSException`
     public static func noThrow<T>(
-        _ expression: () throws -> T, // must NOT be @autoclosure, see: CODESTYLE_GUIDE.md
+        _ expression: () throws -> T, // must NOT be @autoclosure
         message: String? = nil,
         file: StaticString = #filePath,
         line: UInt = #line

@@ -17,6 +17,10 @@ final class MustErrorTests: XCTestCase {
         expectMustFailure { Must.throwAnyError { 1 } }
     }
 
+    func test_throwAnyError_Async() async {
+        await Must.throwAnyError { () async throws -> Int in throw SampleError.invalid }
+    }
+
     func test_throwError_MatchingError() {
         Must.throwError({ throw SampleError.invalid }, SampleError.invalid)
     }
