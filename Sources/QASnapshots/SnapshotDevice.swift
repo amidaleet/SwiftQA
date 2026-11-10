@@ -31,6 +31,11 @@ public struct SnapshotDevice: Sendable {
     /// Crop snapshot to sut view frame (use full screen size instead if turned off)
     public var isCropOn: Bool
 
+    /// Трейты, которые видит снимаемый контент: size class и idiom
+    ///
+    /// По умолчанию ``Traits/simulator``: трейты не переопределяются и берутся от симулятора
+    public var traits: Traits
+
     public init(
         portraitWidth: CGFloat,
         portraitHeight: CGFloat,
@@ -38,7 +43,8 @@ public struct SnapshotDevice: Sendable {
         portraitSafeArea: UIEdgeInsets,
         landscapeSafeArea: UIEdgeInsets,
         orientation: Orientation,
-        isCropOn: Bool = false
+        isCropOn: Bool = false,
+        traits: Traits = .simulator
     ) {
         let size = CGSize(width: portraitWidth, height: portraitHeight)
         switch orientation {
@@ -56,6 +62,7 @@ public struct SnapshotDevice: Sendable {
         )
         self.orientation = orientation
         self.isCropOn = isCropOn
+        self.traits = traits
     }
 
     mutating func flip() {
@@ -65,6 +72,11 @@ public struct SnapshotDevice: Sendable {
         case .landscape:
             orientation = .portrait
         }
+    }
+
+    /// Часть имени эталона, которая отличает девайсы группы
+    var referenceSizeName: String {
+        "\(Int(size.width))x\(Int(size.height))@\(Int(scale))x"
     }
 
     func referenceURL(testName: String, suffix: String, testFile: StaticString) -> URL {
@@ -79,7 +91,7 @@ public struct SnapshotDevice: Sendable {
         )
         .deletingLastPathComponent()
         .appendingPathComponent("_Snapshots_", isDirectory: true)
-        .appendingPathComponent("\(name)_\(Int(size.width))x\(Int(size.height))@\(Int(scale))x.png")
+        .appendingPathComponent("\(name)_\(referenceSizeName).png")
     }
 }
 
@@ -112,6 +124,46 @@ extension SnapshotDevice {
             case .landscape: return landscape
             }
         }
+    }
+}
+
+extension SnapshotDevice {
+    /// Переопределение трейтов холста. `nil` в поле — значение берётся от симулятора
+    public struct Traits: Sendable, Equatable {
+        public var horizontalSizeClass: UIUserInterfaceSizeClass?
+        public var verticalSizeClass: UIUserInterfaceSizeClass?
+        public var userInterfaceIdiom: UIUserInterfaceIdiom?
+
+        var isEmpty: Bool {
+            horizontalSizeClass == nil && verticalSizeClass == nil && userInterfaceIdiom == nil
+        }
+
+        public init(
+            horizontalSizeClass: UIUserInterfaceSizeClass? = nil,
+            verticalSizeClass: UIUserInterfaceSizeClass? = nil,
+            userInterfaceIdiom: UIUserInterfaceIdiom? = nil
+        ) {
+            self.horizontalSizeClass = horizontalSizeClass
+            self.verticalSizeClass = verticalSizeClass
+            self.userInterfaceIdiom = userInterfaceIdiom
+        }
+
+        /// Без переопределения: трейты симулятора iPhone
+        public static let simulator = Traits()
+
+        /// iPad на весь экран в любой ориентации
+        public static let iPad = Traits(
+            horizontalSizeClass: .regular,
+            verticalSizeClass: .regular,
+            userInterfaceIdiom: .pad
+        )
+
+        /// Узкая колонка iPad: Slide Over и Split View 1/3, на iPad mini — ещё и 1/2
+        public static let iPadCompactColumn = Traits(
+            horizontalSizeClass: .compact,
+            verticalSizeClass: .regular,
+            userInterfaceIdiom: .pad
+        )
     }
 }
 

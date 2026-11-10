@@ -124,10 +124,14 @@ Or call `Snapshots.matchDualThemes` and lay out the two halves yourself.
 | API | Role |
 | --- | --- |
 | `.phone` | iPhone SE + iPhone 13 mini |
-| `.tablet` | iPad mini |
+| `.tablet` | iPad mini, regular size classes, `.pad` idiom |
+| `.tablet13` | iPad Pro 13", regular size classes, `.pad` idiom |
+| `.tabletCompactColumn` | iPad Slide Over / 1/3 Split View column, compact width |
+| `.tabletSplitMode` | iPad mini Split View columns, size class per column |
 | `.phone.universal` | portrait + landscape |
 | `.phone.noSafeArea` / `.cropped` | modifiers on a group |
 | `.custom(width:height:)` | fixed canvas |
+| `.custom(..., traits: .iPad)` | fixed canvas with trait overrides |
 | `mode: .verify` | compare to reference (default) |
 | `mode: .record` | write / update the PNG |
 

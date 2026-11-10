@@ -19,6 +19,14 @@ public enum Snapshots {
         includeAccessibility: Bool = false,
         prepareSut: @MainActor @escaping (SnapshotDevice) throws -> SnapshotSut
     ) async {
+        guard deviceGroup.hasUniqueReferenceNames else {
+            XCTFail(
+                "Девайсы группы пишут в один эталон: размеры и scale должны различаться",
+                file: file,
+                line: line
+            )
+            return
+        }
         if case .record = mode {
             guard assertSimulatorIfNeeded(file: file, line: line) else { return }
         }
@@ -101,6 +109,14 @@ public enum Snapshots {
         prepareReference: @MainActor @escaping (SnapshotDevice) throws -> SnapshotSut,
         prepareSut: @MainActor @escaping (SnapshotDevice) throws -> SnapshotSut
     ) async {
+        guard deviceGroup.hasUniqueReferenceNames else {
+            XCTFail(
+                "Девайсы группы пишут в один эталон: размеры и scale должны различаться",
+                file: file,
+                line: line
+            )
+            return
+        }
         if case .record = mode {
             guard assertSimulatorIfNeeded(file: file, line: line) else { return }
         }

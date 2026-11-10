@@ -44,6 +44,8 @@ final class SnapshotCanvas: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        applyTraits()
+
         if sut.shouldMeasureBeforeAdding {
             sutSize = sut.view.sizeThatFits(screen.size)
         }
@@ -149,6 +151,21 @@ final class SnapshotCanvas: UIViewController {
 
         [topInsetLabel, bottomInsetLabel, leftInsetLabel, rightInsetLabel].forEach {
             $0.isHidden = $0.text == "0.0"
+        }
+    }
+
+    // MARK: - Traits
+
+    /// Трейты ``SnapshotDevice/traits`` получают холст и SUT-контроллер:
+    /// `UIHostingController` замеряется до добавления в холст
+    private func applyTraits() {
+        let traits = screen.traits
+        // До iOS 17 не переопределяем: эталоны сравниваются только на симуляторе iOS 26.5 (`QA_SNAPSHOTS_SIMULATOR`)
+        guard !traits.isEmpty, #available(iOS 17.0, *) else { return }
+
+        traits.apply(to: &traitOverrides)
+        if case let .controller(controller) = sut {
+            traits.apply(to: &controller.traitOverrides)
         }
     }
 
@@ -334,6 +351,21 @@ extension UIColor {
         }
 
         return UIColor(patternImage: pattern).withAlphaComponent(alpha)
+    }
+}
+
+extension SnapshotDevice.Traits {
+    @available(iOS 17.0, *)
+    fileprivate func apply(to overrides: inout UITraitOverrides) {
+        if let horizontalSizeClass {
+            overrides.horizontalSizeClass = horizontalSizeClass
+        }
+        if let verticalSizeClass {
+            overrides.verticalSizeClass = verticalSizeClass
+        }
+        if let userInterfaceIdiom {
+            overrides.userInterfaceIdiom = userInterfaceIdiom
+        }
     }
 }
 

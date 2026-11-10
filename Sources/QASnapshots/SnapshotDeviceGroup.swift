@@ -30,6 +30,13 @@ public struct SnapshotDeviceGroup: Sendable {
 }
 
 extension SnapshotDeviceGroup {
+    /// Имя эталона различает девайсы только по размеру и scale, трейты в него не входят
+    var hasUniqueReferenceNames: Bool {
+        Set(devices.map(\.referenceSizeName)).count == devices.count
+    }
+}
+
+extension SnapshotDeviceGroup {
     public static func + (lhs: Self, rhs: Self) -> Self {
         SnapshotDeviceGroup(
             rotatable: lhs.rotatable && rhs.rotatable,
@@ -73,7 +80,8 @@ extension SnapshotDeviceGroup {
                     scale: device.scale,
                     portraitSafeArea: device.insets,
                     landscapeSafeArea: .zero,
-                    isCropOn: device.isCropOn
+                    isCropOn: device.isCropOn,
+                    traits: device.traits
                 )
             }
             .reduce(
@@ -107,7 +115,8 @@ extension SnapshotDeviceGroup {
         scale: CGFloat = 2,
         portraitSafeArea: UIEdgeInsets = .zero,
         landscapeSafeArea: UIEdgeInsets = .zero,
-        isCropOn: Bool = true
+        isCropOn: Bool = true,
+        traits: SnapshotDevice.Traits = .simulator
     ) -> SnapshotDeviceGroup {
         SnapshotDeviceGroup(
             rotatable: true,
@@ -118,7 +127,8 @@ extension SnapshotDeviceGroup {
                 portraitSafeArea: portraitSafeArea,
                 landscapeSafeArea: landscapeSafeArea,
                 orientation: .portrait,
-                isCropOn: isCropOn
+                isCropOn: isCropOn,
+                traits: traits
             )
         )
     }
@@ -130,68 +140,111 @@ extension SnapshotDeviceGroup {
         .iPhone13mini
     )
 
-    /// __Портретные__ iPad
+    /// __Портретный__ iPad mini (6th generation) с трейтами ``SnapshotDevice/Traits/iPad``
+    ///
+    /// Ландшафт — `.tablet.landscape`, обе ориентации — `.tablet.universal`
     public static let tablet = SnapshotDeviceGroup(
         rotatable: true,
-        SnapshotDevice( // iPad mini (6th generation)
-            portraitWidth: 744,
+        .iPadMini6
+    )
+
+    /// __Портретный__ iPad Pro 13-inch (M4) с трейтами ``SnapshotDevice/Traits/iPad``
+    public static let tablet13 = SnapshotDeviceGroup(
+        rotatable: true,
+        .iPadPro13
+    )
+
+    /// Узкая колонка iPad mini (6th generation): Slide Over или Split View 1/3
+    ///
+    /// Трейты ``SnapshotDevice/Traits/iPadCompactColumn``
+    public static let tabletCompactColumn = SnapshotDeviceGroup(
+        rotatable: false,
+        SnapshotDevice(
+            portraitWidth: 320,
             portraitHeight: 1_133,
             scale: 2,
-            portraitSafeArea: .iPadMini6SafeArea,
-            landscapeSafeArea: .iPadMini6SafeArea,
-            orientation: .portrait
+            portraitSafeArea: .iPadSafeArea,
+            landscapeSafeArea: .iPadSafeArea,
+            orientation: .portrait,
+            traits: .iPadCompactColumn
         )
     )
 
     /// iPad Split View, обе ориентации
     ///
-    /// Замеры под iPad mini (6th generation)
+    /// Замеры под iPad mini (6th generation): колонки портрета 320 и 414 высотой 1133,
+    /// колонки ландшафта 375, 561.5 и 748 высотой 744. Колонка 748 — regular, остальные — compact
     public static let tabletSplitMode = SnapshotDeviceGroup(
         rotatable: false,
         SnapshotDevice(
             portraitWidth: 320,
             portraitHeight: 1_133,
             scale: 2,
-            portraitSafeArea: .iPadMini6SafeArea,
-            landscapeSafeArea: .iPadMini6SafeArea,
-            orientation: .portrait
+            portraitSafeArea: .iPadSafeArea,
+            landscapeSafeArea: .iPadSafeArea,
+            orientation: .portrait,
+            traits: .iPadCompactColumn
         ),
         SnapshotDevice(
             portraitWidth: 414,
             portraitHeight: 1_133,
             scale: 2,
-            portraitSafeArea: .iPadMini6SafeArea,
-            landscapeSafeArea: .iPadMini6SafeArea,
-            orientation: .portrait
+            portraitSafeArea: .iPadSafeArea,
+            landscapeSafeArea: .iPadSafeArea,
+            orientation: .portrait,
+            traits: .iPadCompactColumn
         ),
         SnapshotDevice(
             portraitWidth: 375,
             portraitHeight: 744,
             scale: 2,
-            portraitSafeArea: .iPadMini6SafeArea,
-            landscapeSafeArea: .iPadMini6SafeArea,
-            orientation: .landscape
+            portraitSafeArea: .iPadSafeArea,
+            landscapeSafeArea: .iPadSafeArea,
+            orientation: .portrait,
+            traits: .iPadCompactColumn
         ),
         SnapshotDevice(
             portraitWidth: 561.5,
             portraitHeight: 744,
             scale: 2,
-            portraitSafeArea: .iPadMini6SafeArea,
-            landscapeSafeArea: .iPadMini6SafeArea,
-            orientation: .landscape
+            portraitSafeArea: .iPadSafeArea,
+            landscapeSafeArea: .iPadSafeArea,
+            orientation: .portrait,
+            traits: .iPadCompactColumn
         ),
         SnapshotDevice(
             portraitWidth: 748,
             portraitHeight: 744,
             scale: 2,
-            portraitSafeArea: .iPadMini6SafeArea,
-            landscapeSafeArea: .iPadMini6SafeArea,
-            orientation: .landscape
+            portraitSafeArea: .iPadSafeArea,
+            landscapeSafeArea: .iPadSafeArea,
+            orientation: .portrait,
+            traits: .iPad
         )
     )
 }
 
 extension SnapshotDevice {
+    public static let iPadMini6 = SnapshotDevice( // (6th generation)
+        portraitWidth: 744,
+        portraitHeight: 1_133,
+        scale: 2,
+        portraitSafeArea: .iPadSafeArea,
+        landscapeSafeArea: .iPadSafeArea,
+        orientation: .portrait,
+        traits: .iPad
+    )
+
+    public static let iPadPro13 = SnapshotDevice( // 13-inch (M4)
+        portraitWidth: 1_032,
+        portraitHeight: 1_376,
+        scale: 2,
+        portraitSafeArea: .iPadSafeArea,
+        landscapeSafeArea: .iPadSafeArea,
+        orientation: .portrait,
+        traits: .iPad
+    )
+
     public static let iPhoneSE = SnapshotDevice( // (3rd generation)
         portraitWidth: 375,
         portraitHeight: 667,
@@ -212,5 +265,5 @@ extension SnapshotDevice {
 }
 
 extension UIEdgeInsets {
-    fileprivate static let iPadMini6SafeArea = UIEdgeInsets(top: 24, bottom: 20)
+    fileprivate static let iPadSafeArea = UIEdgeInsets(top: 24, bottom: 20)
 }
