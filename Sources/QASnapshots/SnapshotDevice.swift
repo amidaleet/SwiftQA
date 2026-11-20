@@ -74,6 +74,14 @@ public struct SnapshotDevice: Sendable {
         }
     }
 
+    /// Половина кадра двойной ширины: тот же девайс, ширина вдвое меньше.
+    /// Её передают теме, когда половины кадра собирают вручную.
+    public var halfWidth: SnapshotDevice {
+        var half = self
+        half.size.width /= 2
+        return half
+    }
+
     /// Часть имени эталона, которая отличает девайсы группы
     var referenceSizeName: String {
         "\(Int(size.width))x\(Int(size.height))@\(Int(scale))x"

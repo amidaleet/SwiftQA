@@ -1,6 +1,8 @@
 import SwiftUI
 
 public protocol SnapshotThemeApplying {
+    /// `device` — девайс, на котором показана вью: в двухтемном кадре это его половина,
+    /// в однотемном — весь кадр. Делить ширину пополам теме не нужно.
     @MainActor
     static func prepare(
         _ sut: some View,
@@ -11,17 +13,20 @@ public protocol SnapshotThemeApplying {
 
 public enum DualThemeSnapshot {
     /// Вызов подставляет `@DualThemeSnapshotSuite`, руками его не пишут.
+    /// `device` — кадр двойной ширины, тема получает его половину.
     @MainActor
     public static func make<Theme: SnapshotThemeApplying>(
         _ sut: some View,
         device: SnapshotDevice,
         theme: Theme.Type
     ) -> AnyView {
-        AnyView(
-            HStack(spacing: .zero) {
-                theme.prepare(sut, colorScheme: .light, device: device)
+        let half = device.halfWidth
 
-                theme.prepare(sut, colorScheme: .dark, device: device)
+        return AnyView(
+            HStack(spacing: .zero) {
+                theme.prepare(sut, colorScheme: .light, device: half)
+
+                theme.prepare(sut, colorScheme: .dark, device: half)
             }
         )
     }

@@ -119,6 +119,10 @@ struct ThemedViewTests {
 
 Or call `Snapshots.matchDualThemes` and lay out the two halves yourself.
 
+The theme's `prepare` gets the device the view is shown on: `DualThemeSnapshot` passes it
+half of the double-width frame. When you lay out the halves yourself, pass `device.halfWidth`;
+in a single-theme frame pass the whole `device`.
+
 ### Devices and mode
 
 | API | Role |
